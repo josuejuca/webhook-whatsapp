@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Query
 import json
 import sqlite3
 
@@ -23,9 +23,14 @@ def init_db():
 
 # 🔹 Verifica a conexão com o WhatsApp API
 @app.get("/webhook/whatsapp")
-async def verify_webhook(mode: str, token: str, challenge: str):
-    if mode == "subscribe" and token == VERIFY_TOKEN:
-        return int(challenge)
+async def verify_webhook(
+    hub_mode: str = Query(..., alias="hub.mode"),
+    hub_token: str = Query(..., alias="hub.verify_token"),
+    hub_challenge: str = Query(..., alias="hub.challenge")
+):
+    """Verifica a conexão com o WhatsApp API (Webhook Verification)."""
+    if hub_mode == "subscribe" and hub_token == VERIFY_TOKEN:
+        return int(hub_challenge)  # Retorna o challenge para confirmar a verificação
     return {"error": "Invalid token"}
 
 # 🔹 Recebe e processa mensagens do WhatsApp
@@ -67,7 +72,7 @@ def get_historico():
         {"id": msg[0], "remetente": msg[1], "mensagem": msg[2], "timestamp": msg[3]}
         for msg in historico
     ]
-    
+
     return {"conversas": historico_formatado}
 
 # 🔹 Inicializa o banco ao rodar a API
